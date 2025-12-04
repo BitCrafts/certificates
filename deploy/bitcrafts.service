@@ -1,0 +1,19 @@
+[Unit]
+Description=BitCrafts Certificates web app
+After=network.target
+
+[Service]
+Type=simple
+User=bitcrafts
+Group=bitcrafts
+WorkingDirectory=/opt/bitcrafts/certificates
+EnvironmentFile=/etc/bitcrafts/certificates.env
+# Don't put secrets here. Put only non-sensitive environment settings.
+ExecStart=/opt/bitcrafts/certificates/run.sh
+Restart=on-failure
+RestartSec=5
+# Resource limits - tune as necessary
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

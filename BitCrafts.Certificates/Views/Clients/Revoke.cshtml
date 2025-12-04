@@ -1,0 +1,50 @@
+@*// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2025 Younes Benmoussa <benzsoftware@pm.me>
+// 
+// This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+// You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>. 
+*@
+@model BitCrafts.Certificates.Models.CertificateRecord
+@{
+    ViewData["Title"] = $"Revoke Certificate #{Model.Id}";
+}
+
+<h1>Revoke Client Certificate</h1>
+
+<div class="alert alert-warning">
+    <strong>Warning:</strong> This action will mark the certificate as <em>revoked</em>. It cannot be undone.
+    Consider rotating any credentials that depended on this certificate.
+    </div>
+
+<dl class="row">
+    <dt class="col-sm-3">ID</dt>
+    <dd class="col-sm-9">@Model.Id</dd>
+
+    <dt class="col-sm-3">Kind</dt>
+    <dd class="col-sm-9">@Model.Kind</dd>
+
+    <dt class="col-sm-3">Subject</dt>
+    <dd class="col-sm-9">@Model.Subject</dd>
+
+    <dt class="col-sm-3">Email SAN</dt>
+    <dd class="col-sm-9">@Model.SanDns</dd>
+
+    <dt class="col-sm-3">Current Status</dt>
+    <dd class="col-sm-9"><span class="badge bg-secondary">@Model.Status</span></dd>
+</dl>
+
+@if (string.Equals(Model.Status, "revoked", StringComparison.OrdinalIgnoreCase))
+{
+    <div class="alert alert-info">This certificate is already revoked.</div>
+    <a class="btn btn-outline-primary" asp-action="Details" asp-route-id="@Model.Id">Back to details</a>
+}
+else
+{
+    <form asp-action="RevokeConfirmed" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <button type="submit" class="btn btn-danger">Confirm Revoke</button>
+        <a class="btn btn-outline-secondary ms-2" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+    </form>
+}
