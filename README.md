@@ -1,6 +1,6 @@
 # BitCrafts Certificates
 
-Personal project by Younes Benmoussa — a small Certificate Authority web app to run at home for issuing and managing server and client certificates.
+Personal small Certificate Authority web app to run at home for issuing and managing server and client certificates.
 
 Purpose
 
