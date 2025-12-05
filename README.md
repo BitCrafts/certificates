@@ -39,29 +39,7 @@ Deployment
   - `--install-apache` to install a reverse proxy configuration
   - `--selinux` to apply SELinux file contexts and booleans (best-effort)
 
-License
+# License
 
 This project is licensed under AGPLv3 (Affero GPL v3). See `LICENSE` for the full text.
-
-Copyright
-
-SPDX-License-Identifier: AGPL-3.0-only
-Copyright (c) 2025 Younes Benmoussa
-
-Notes & recommendations
-
-- For any production or Internet-facing use, do NOT use this as a public CA. It's intended for local/intranet use.
-- For strong protection of the Root CA key consider using an HSM or a secrets manager (Vault, cloud KMS).
-- Consider centralizing logs and audit trails off the machine to a secure aggregator.
-- Regularly review and rotate keys/certs as appropriate for your environment.
-
-How to contribute / extend
-
-- Add features under `Pki/` for additional key types or CRL support.
-- Add integration with a secrets manager for Root CA storage.
-- Add more hardened SELinux policies if you run with SELinux enforced.
-
-Contact
-
-Younes Benmoussa
 
