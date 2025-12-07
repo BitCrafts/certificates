@@ -6,7 +6,7 @@
 // You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>. 
 *@
 
-@model BitCrafts.Certificates.Models.CertificateRecord
+@model BitCrafts.Certificates.Application.DTOs.CertificateDto
 @{
     ViewData["Title"] = $"Certificate #{Model.Id}";
 }
@@ -29,37 +29,40 @@
     <dt class="col-sm-3">Subject</dt>
     <dd class="col-sm-9">@Model.Subject</dd>
 
-    <dt class="col-sm-3">Email SAN</dt>
-    <dd class="col-sm-9">@Model.SanDns</dd>
+    @if (!string.IsNullOrEmpty(Model.SanEmail))
+    {
+        <dt class="col-sm-3">Email SAN</dt>
+        <dd class="col-sm-9">@Model.SanEmail</dd>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.SanDns))
+    {
+        <dt class="col-sm-3">DNS SAN</dt>
+        <dd class="col-sm-9">@Model.SanDns</dd>
+    }
+
+    <dt class="col-sm-3">Serial Number</dt>
+    <dd class="col-sm-9">@Model.SerialNumber</dd>
+
+    <dt class="col-sm-3">Thumbprint</dt>
+    <dd class="col-sm-9"><code>@Model.Thumbprint</code></dd>
 
     <dt class="col-sm-3">Not Before</dt>
-    <dd class="col-sm-9">@Model.NotBefore</dd>
+    <dd class="col-sm-9">@Model.NotBefore.ToString("yyyy-MM-dd HH:mm:ss")</dd>
 
     <dt class="col-sm-3">Not After</dt>
-    <dd class="col-sm-9">@Model.NotAfter</dd>
+    <dd class="col-sm-9">@Model.NotAfter.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+
+    <dt class="col-sm-3">Issued At</dt>
+    <dd class="col-sm-9">@Model.IssuedAt.ToString("yyyy-MM-dd HH:mm:ss")</dd>
 
     <dt class="col-sm-3">Status</dt>
-    <dd class="col-sm-9"><span class="badge bg-secondary">@Model.Status</span></dd>
-
-    <dt class="col-sm-3">Key Path</dt>
-    <dd class="col-sm-9"><code>@Model.KeyPath</code></dd>
-
-    <dt class="col-sm-3">Cert Path</dt>
-    <dd class="col-sm-9"><code>@Model.CertPath</code></dd>
-
-    <dt class="col-sm-3">Chain Path</dt>
-    <dd class="col-sm-9"><code>@Model.ChainPath</code></dd>
-
-    <dt class="col-sm-3">Created</dt>
-    <dd class="col-sm-9">@Model.CreatedAt</dd>
-
-    <dt class="col-sm-3">Updated</dt>
-    <dd class="col-sm-9">@Model.UpdatedAt</dd>
+    <dd class="col-sm-9"><span class="badge @(Model.IsRevoked ? "bg-danger" : "bg-success")">@Model.Status</span></dd>
 </dl>
 
 <div class="mt-3">
     <a class="btn btn-outline-primary" asp-action="Index">Back</a>
-    @if (!string.Equals(Model.Status, "revoked", StringComparison.OrdinalIgnoreCase))
+    @if (!Model.IsRevoked)
     {
         <a class="btn btn-outline-danger ms-2" asp-action="Revoke" asp-route-id="@Model.Id">Revoke…</a>
     }

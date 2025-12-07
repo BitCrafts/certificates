@@ -5,24 +5,30 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 // You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>. 
 
-using System.ComponentModel.DataAnnotations;
 using BitCrafts.Certificates.Data.Repositories;
-using BitCrafts.Certificates.Pki;
+using BitCrafts.Certificates.Domain.Interfaces;
+using BitCrafts.Certificates.Presentation.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using BitCrafts.Certificates.Services;
 
 namespace BitCrafts.Certificates.Controllers;
 
+/// <summary>
+/// MVC Controller for initial setup
+/// Uses Domain layer services for CA initialization
+/// </summary>
 public class SetupController : Controller
 {
     private readonly ISettingsRepository _settings;
-    private readonly ICaService _caService;
+    private readonly IPkiService _pkiService;
     private readonly ILogger<SetupController> _logger;
 
-    public SetupController(ISettingsRepository settings, ICaService caService, ILogger<SetupController> logger)
+    public SetupController(
+        ISettingsRepository settings, 
+        IPkiService pkiService, 
+        ILogger<SetupController> logger)
     {
         _settings = settings;
-        _caService = caService;
+        _pkiService = pkiService;
         _logger = logger;
     }
 
@@ -45,7 +51,7 @@ public class SetupController : Controller
         await _settings.SetAsync("BITCRAFTS_DOMAIN", model.Domain);
         try
         {
-            await _caService.CreateRootCaIfMissingAsync(model.Domain);
+            await _pkiService.EnsureRootCAAsync(model.Domain);
         }
         catch (Exception ex)
         {
@@ -57,12 +63,4 @@ public class SetupController : Controller
         TempData["SetupDone"] = true;
         return RedirectToAction("Index", "Home");
     }
-}
-
-public class SetupViewModel
-{
-    [Required]
-    [Display(Name = "Intranet base domain (e.g., home.lan)")]
-    [RegularExpression("^[a-zA-Z0-9.-]+$", ErrorMessage = "Domain contains invalid characters.")]
-    public string Domain { get; set; } = string.Empty;
 }

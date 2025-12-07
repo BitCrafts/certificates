@@ -5,37 +5,35 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 // You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>. 
 
-using System.ComponentModel.DataAnnotations;
-using BitCrafts.Certificates.Data.Repositories;
-using BitCrafts.Certificates.Models;
-using BitCrafts.Certificates.Pki;
-using BitCrafts.Certificates.Services;
+using BitCrafts.Certificates.Application.DTOs;
+using BitCrafts.Certificates.Application.Interfaces;
+using BitCrafts.Certificates.Presentation.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BitCrafts.Certificates.Controllers;
 
+/// <summary>
+/// MVC Controller for server certificate management UI
+/// Follows clean architecture by delegating to Application layer services
+/// </summary>
 public class ServersController : Controller
 {
-    private readonly ICertificatesRepository _certs;
-    private readonly ILeafCertificateService _leaf;
+    private readonly ICertificateApplicationService _certificateService;
     private readonly ILogger<ServersController> _logger;
-    private readonly IAuditLogger _audit;
-    private readonly IRevocationStore _revocations;
 
-    public ServersController(ICertificatesRepository certs, ILeafCertificateService leaf, ILogger<ServersController> logger, IAuditLogger audit, IRevocationStore revocations)
+    public ServersController(
+        ICertificateApplicationService certificateService,
+        ILogger<ServersController> logger)
     {
-        _certs = certs;
-        _leaf = leaf;
+        _certificateService = certificateService;
         _logger = logger;
-        _audit = audit;
-        _revocations = revocations;
     }
 
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        var list = await _certs.ListByKindAsync("server");
-        return View(list);
+        var certificates = await _certificateService.GetCertificatesByKindAsync("server");
+        return View(certificates);
     }
 
     [HttpGet]
@@ -56,12 +54,17 @@ public class ServersController : Controller
         try
         {
             var ips = (model.IpAddresses ?? string.Empty)
-                .Split(new[] { ',', ' ', ';', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            var id = await _leaf.IssueServerAsync(model.Fqdn.Trim(), ips);
-            // Audit with requester IP for UI-originated issuance (in addition to service-level "issue")
-            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-            _audit.LogAsync("issue_ui", "server", model.Fqdn.Trim(), id, requesterIp: ip);
-            return RedirectToAction(nameof(Details), new { id });
+                .Split(new[] { ',', ' ', ';', '\n', '\r', '\t' }, 
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            var dto = new CreateServerCertificateDto
+            {
+                Fqdn = model.Fqdn.Trim(),
+                IpAddresses = ips
+            };
+
+            var certificate = await _certificateService.CreateServerCertificateAsync(dto);
+            return RedirectToAction(nameof(Details), new { id = certificate.Id });
         }
         catch (Exception ex)
         {
@@ -74,80 +77,52 @@ public class ServersController : Controller
     [HttpGet]
     public async Task<IActionResult> Details(long id)
     {
-        var rec = await _certs.GetAsync(id);
-        if (rec == null) return NotFound();
-        return View(rec);
+        var certificate = await _certificateService.GetCertificateAsync(id);
+        if (certificate == null) 
+            return NotFound();
+        
+        return View(certificate);
     }
 
     [HttpGet]
     public async Task<IActionResult> Revoke(long id)
     {
-        var rec = await _certs.GetAsync(id);
-        if (rec == null) return NotFound();
-        return View(rec);
+        var certificate = await _certificateService.GetCertificateAsync(id);
+        if (certificate == null) 
+            return NotFound();
+        
+        return View(certificate);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RevokeConfirmed(long id)
     {
-        var rec = await _certs.GetAsync(id);
-        if (rec == null) return NotFound();
-        if (!string.Equals(rec.Status, "revoked", StringComparison.OrdinalIgnoreCase))
-        {
-            await _certs.UpdateStatusAsync(id, "revoked");
-            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-            _audit.LogAsync("revoke", "server", rec.SanDns ?? rec.Subject, id, requesterIp: ip);
-            // Append to CRL stub (best-effort)
-            await _revocations.AppendAsync(id, "server", rec.SanDns ?? rec.Subject, DateTimeOffset.UtcNow);
-        }
+        var dto = new RevokeCertificateDto { CertificateId = id };
+        var success = await _certificateService.RevokeCertificateAsync(dto);
+        
+        if (!success)
+            return NotFound();
+        
         return RedirectToAction(nameof(Details), new { id });
     }
 
     [HttpGet]
     public async Task<IActionResult> Download(long id)
     {
-        var rec = await _certs.GetAsync(id);
-        if (rec == null) return NotFound();
-
-        // Determine file paths from record (absolute paths stored in record)
-        var certPath = rec.CertPath;
-        var keyPath = rec.KeyPath;
-
-        if (string.IsNullOrEmpty(certPath) || string.IsNullOrEmpty(keyPath) || !System.IO.File.Exists(certPath) || !System.IO.File.Exists(keyPath))
+        try
+        {
+            var archive = await _certificateService.DownloadCertificateArchiveAsync(id);
+            return File(archive, "application/gzip", $"certificate-{id}.tar.gz");
+        }
+        catch (InvalidOperationException)
         {
             return NotFound();
         }
-
-        var baseName = SanitizeFileName(rec.SanDns ?? rec.Subject ?? ($"cert-{rec.Id}"));
-        var certBytes = await System.IO.File.ReadAllBytesAsync(certPath);
-        var keyBytes = await System.IO.File.ReadAllBytesAsync(keyPath);
-
-        var files = new List<(string Name, byte[] Content)>
+        catch (Exception ex)
         {
-            ($"{baseName}.crt", certBytes),
-            ($"{baseName}.key", keyBytes)
-        };
-
-        var tarGz = BitCrafts.Certificates.Helpers.TarGzHelper.CreateTarGz(files);
-        var fileName = $"{baseName}.tar.gz";
-        return File(tarGz, "application/gzip", fileName);
+            _logger.LogError(ex, "Failed to download certificate {Id}", id);
+            return StatusCode(500, "Failed to download certificate");
+        }
     }
-    
-    private static string SanitizeFileName(string s)
-    {
-        foreach (var c in System.IO.Path.GetInvalidFileNameChars()) s = s.Replace(c, '_');
-        return s;
-    }
-}
-
-public class CreateServerViewModel
-{
-    [Required]
-    [Display(Name = "Server FQDN")]
-    [RegularExpression("^[A-Za-z0-9.-]+$", ErrorMessage = "FQDN contains invalid characters.")]
-    public string Fqdn { get; set; } = string.Empty;
-
-    [Display(Name = "IP addresses (optional, comma or space separated)")]
-    public string? IpAddresses { get; set; }
 }
