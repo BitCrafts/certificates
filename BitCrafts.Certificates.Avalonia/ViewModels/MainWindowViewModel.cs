@@ -17,13 +17,18 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public CertificateListViewModel CertificateListViewModel { get; }
     public CreateCertificateViewModel CreateCertificateViewModel { get; }
+    public CertificateDetailsViewModel CertificateDetailsViewModel { get; }
 
     public MainWindowViewModel(IServiceProvider serviceProvider)
     {
-        CertificateListViewModel = new CertificateListViewModel(serviceProvider);
+        CertificateListViewModel = new CertificateListViewModel(serviceProvider, ShowCertificateDetails);
         CreateCertificateViewModel = new CreateCertificateViewModel(
             serviceProvider,
             onCertificateCreated: () => _ = CertificateListViewModel.LoadCertificatesCommand.ExecuteAsync(null)
+        );
+        CertificateDetailsViewModel = new CertificateDetailsViewModel(
+            serviceProvider,
+            onCertificateUpdated: () => _ = CertificateListViewModel.LoadCertificatesCommand.ExecuteAsync(null)
         );
 
         // Set initial view
@@ -38,6 +43,12 @@ public partial class MainWindowViewModel : ViewModelBase
     public void ShowCreateCertificate()
     {
         CurrentView = CreateCertificateViewModel;
+    }
+
+    public async void ShowCertificateDetails(long certificateId)
+    {
+        await CertificateDetailsViewModel.LoadCertificateAsync(certificateId);
+        CurrentView = CertificateDetailsViewModel;
     }
 }
 
