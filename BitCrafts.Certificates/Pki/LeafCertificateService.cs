@@ -127,7 +127,7 @@ public sealed class LeafCertificateService : ILeafCertificateService
         };
         var id = await _certs.InsertAsync(rec, ct);
         _logger.LogInformation("Issued server cert for {Fqdn} -> {CertPath}", fqdn, certPath);
-        _audit.LogAsync("issue", "server", fqdn, id, null, keyPath, certPath, chainPath, ct);
+        // Note: Audit logging is handled at the application layer to avoid duplicate entries
         return id;
     }
 
@@ -209,7 +209,7 @@ public sealed class LeafCertificateService : ILeafCertificateService
         };
         var id = await _certs.InsertAsync(rec, ct);
         _logger.LogInformation("Issued client cert for {User} -> {CertPath}", username, certPath);
-        _audit.LogAsync("issue", "client", username, id, null, keyPath, certPath, chainPath, ct);
+        // Note: Audit logging is handled at the application layer to avoid duplicate entries
         return id;
     }
 

@@ -44,7 +44,7 @@ public sealed class CertificateApplicationService : ICertificateApplicationServi
         var id = await _repository.AddAsync(cert, ct);
         cert.Id = id;
         
-        _auditLogger.LogAsync("create_server_cert", "server", dto.Fqdn, id);
+        _auditLogger.LogAsync("create_server_cert", "server", dto.Fqdn, id, null, cert.KeyPath, cert.CertPath, null, ct);
         
         return MapToDto(cert);
     }
@@ -57,7 +57,7 @@ public sealed class CertificateApplicationService : ICertificateApplicationServi
         var id = await _repository.AddAsync(cert, ct);
         cert.Id = id;
         
-        _auditLogger.LogAsync("create_client_cert", "client", dto.Username, id);
+        _auditLogger.LogAsync("create_client_cert", "client", dto.Username, id, null, cert.KeyPath, cert.CertPath, null, ct);
         
         return MapToDto(cert);
     }
