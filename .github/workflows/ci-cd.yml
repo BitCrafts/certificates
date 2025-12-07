@@ -19,6 +19,8 @@ jobs:
   # Build and test job for all branches
   build-and-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
     - name: Checkout code
