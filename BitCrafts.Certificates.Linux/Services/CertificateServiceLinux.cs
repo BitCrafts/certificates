@@ -44,28 +44,19 @@ public class CertificateServiceLinux : ICertificateService
                 throw new CertificateCreationException($"Failed to generate private key: {keyResult.Error}");
             }
 
-            // Create CSR
-            var csrPath = Path.Combine(_workingDirectory, $"{Guid.NewGuid()}.csr");
-            var subject = BuildSubject(metadata);
-            var csrResult = await _openSsl.GenerateCertificateSigningRequestAsync(keyPath, csrPath, subject, cancellationToken);
-            if (!csrResult.Success)
-            {
-                throw new CertificateCreationException($"Failed to generate CSR: {csrResult.Error}");
-            }
-
-            // For now, create a self-signed certificate (in production, this would be signed by CA)
+            // Create self-signed certificate (in production, this would be signed by CA)
             var certPath = Path.Combine(_workingDirectory, $"{Guid.NewGuid()}.crt");
-            var signResult = await _openSsl.SignCertificateAsync(
-                csrPath,
-                certPath, // Using cert as CA for self-signed
-                keyPath,  // Using key as CA key for self-signed
+            var subject = BuildSubject(metadata);
+            var certResult = await _openSsl.GenerateSelfSignedCertificateAsync(
+                keyPath,
                 certPath,
+                subject,
                 metadata.ValidityDays,
-                cancellationToken: cancellationToken);
+                cancellationToken);
 
-            if (!signResult.Success)
+            if (!certResult.Success)
             {
-                throw new CertificateCreationException($"Failed to sign certificate: {signResult.Error}");
+                throw new CertificateCreationException($"Failed to create self-signed certificate: {certResult.Error}");
             }
 
             // Read certificate and key data
@@ -77,7 +68,6 @@ public class CertificateServiceLinux : ICertificateService
 
             // Clean up temporary files
             File.Delete(keyPath);
-            File.Delete(csrPath);
             File.Delete(certPath);
 
             var certificate = new Certificate

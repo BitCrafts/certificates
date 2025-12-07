@@ -79,4 +79,23 @@ public class OpenSslWrapper : ProcessWrapperBase
         var args = new[] { "x509", "-in", EscapePath(certPath), "-noout", "-text" };
         return await ExecuteProcessAsync(OpenSslCommand, args, cancellationToken: cancellationToken);
     }
+
+    public async Task<ProcessResult> GenerateSelfSignedCertificateAsync(
+        string keyPath,
+        string certPath,
+        string subject,
+        int validityDays,
+        CancellationToken cancellationToken = default)
+    {
+        var args = new[]
+        {
+            "req", "-x509", "-new",
+            "-key", EscapePath(keyPath),
+            "-out", EscapePath(certPath),
+            "-subj", subject,
+            "-days", validityDays.ToString()
+        };
+
+        return await ExecuteProcessAsync(OpenSslCommand, args, cancellationToken: cancellationToken);
+    }
 }

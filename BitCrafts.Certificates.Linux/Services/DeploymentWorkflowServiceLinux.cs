@@ -37,6 +37,10 @@ public class DeploymentWorkflowServiceLinux : IDeploymentWorkflowService
         Certificate certificate,
         CancellationToken cancellationToken = default)
     {
+        // NOTE: The certificate parameter should contain DECRYPTED data, not encrypted
+        // The caller is responsible for decrypting certificate.EncryptedData before calling this method
+        // This service will deploy the decrypted certificate data to targets
+
         var results = new List<string>();
         var errors = new List<string>();
 

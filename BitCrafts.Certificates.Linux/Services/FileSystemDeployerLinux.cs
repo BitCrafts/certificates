@@ -26,6 +26,11 @@ public class FileSystemDeployerLinux : IFileSystemDeployer
                 return DeploymentResult.FailureResult("Certificate has no data to deploy");
             }
 
+            // NOTE: The certificate.EncryptedData should be DECRYPTED before calling this method
+            // This method expects plain certificate data, not encrypted data
+            // The caller (DeploymentWorkflowServiceLinux) is responsible for decryption
+            var certificateData = certificate.EncryptedData;
+
             // Validate target path
             if (!await ValidatePathAsync(target.DestinationPath, cancellationToken))
             {
@@ -37,7 +42,7 @@ public class FileSystemDeployerLinux : IFileSystemDeployer
             var fullPath = Path.Combine(target.DestinationPath, fileName);
 
             // Write certificate data to file with restricted permissions
-            await File.WriteAllBytesAsync(fullPath, certificate.EncryptedData, cancellationToken);
+            await File.WriteAllBytesAsync(fullPath, certificateData, cancellationToken);
 
             // Set permissions and ownership
             await SetPermissionsAsync(
@@ -77,17 +82,20 @@ public class FileSystemDeployerLinux : IFileSystemDeployer
     {
         try
         {
+            // Validate and normalize path
+            var normalizedPath = Path.GetFullPath(path);
+
             // Set file permissions using chmod
             if (!string.IsNullOrEmpty(permissions))
             {
-                await ExecuteCommandAsync($"chmod {permissions} {path}", cancellationToken);
+                await ExecuteCommandAsync("chmod", new[] { permissions, normalizedPath }, cancellationToken);
             }
 
             // Set ownership using chown
             if (!string.IsNullOrEmpty(owner))
             {
                 var ownerGroup = string.IsNullOrEmpty(group) ? owner : $"{owner}:{group}";
-                await ExecuteCommandAsync($"chown {ownerGroup} {path}", cancellationToken);
+                await ExecuteCommandAsync("chown", new[] { ownerGroup, normalizedPath }, cancellationToken);
             }
         }
         catch (Exception ex)
@@ -96,17 +104,22 @@ public class FileSystemDeployerLinux : IFileSystemDeployer
         }
     }
 
-    private async Task<string> ExecuteCommandAsync(string command, CancellationToken cancellationToken)
+    private async Task<string> ExecuteCommandAsync(string command, string[] arguments, CancellationToken cancellationToken)
     {
         var startInfo = new ProcessStartInfo
         {
-            FileName = "/bin/sh",
-            Arguments = $"-c \"{command}\"",
+            FileName = command,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
+
+        // Add arguments one by one to avoid shell injection
+        foreach (var arg in arguments)
+        {
+            startInfo.ArgumentList.Add(arg);
+        }
 
         using var process = Process.Start(startInfo);
         if (process == null)
