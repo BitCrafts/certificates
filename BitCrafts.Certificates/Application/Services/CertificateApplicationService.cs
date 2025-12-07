@@ -40,7 +40,7 @@ public sealed class CertificateApplicationService : ICertificateApplicationServi
     {
         _logger.LogInformation("Creating server certificate for {Fqdn}", dto.Fqdn);
         
-        var cert = await _pkiService.IssueServerCertificateAsync(dto.Fqdn, dto.IpAddresses, ct);
+        var cert = await _pkiService.IssueServerCertificateAsync(dto.Fqdn, dto.IpAddresses, dto.DnsNames, ct);
         var id = await _repository.AddAsync(cert, ct);
         cert.Id = id;
         

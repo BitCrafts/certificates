@@ -68,6 +68,9 @@
                 </StackPanel>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+                    <Button Content="View Details" 
+                            Command="{Binding ViewDetailsCommand}"
+                            Margin="5,0"/>
                     <Button Content="Revoke" 
                             Command="{Binding RevokeCertificateCommand}"
                             IsEnabled="{Binding SelectedCertificate.IsRevoked, Converter={x:Static BoolConverters.Not}}"

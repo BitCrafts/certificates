@@ -42,6 +42,9 @@
                 <DataTemplate DataType="vm:CreateCertificateViewModel">
                     <views:CreateCertificateView />
                 </DataTemplate>
+                <DataTemplate DataType="vm:CertificateDetailsViewModel">
+                    <views:CertificateDetailsView />
+                </DataTemplate>
             </ContentControl.DataTemplates>
         </ContentControl>
     </Grid>

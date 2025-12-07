@@ -17,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using BitCrafts.Certificates.Services;
 using BitCrafts.Certificates.Data;
+using BitCrafts.Certificates.Data.Repositories;
 
 namespace BitCrafts.Certificates.Avalonia;
 
@@ -43,13 +44,55 @@ public partial class App : global::Avalonia.Application
             // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
             DisableAvaloniaDataAnnotationValidation();
             
-            desktop.MainWindow = new MainWindow
+            // Check if setup is needed
+            if (RequiresSetup())
             {
-                DataContext = new MainWindowViewModel(ServiceProvider),
-            };
+                desktop.MainWindow = new SetupWindow
+                {
+                    DataContext = new SetupViewModel(ServiceProvider, () => ShowMainWindow(desktop)),
+                };
+            }
+            else
+            {
+                ShowMainWindow(desktop);
+            }
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private bool RequiresSetup()
+    {
+        if (ServiceProvider == null) return true;
+
+        try
+        {
+            var settings = ServiceProvider.GetRequiredService<ISettingsRepository>();
+            var domain = settings.GetAsync("BITCRAFTS_DOMAIN").Result;
+            return string.IsNullOrWhiteSpace(domain);
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
+    private void ShowMainWindow(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        if (ServiceProvider == null) return;
+
+        var mainWindow = new MainWindow
+        {
+            DataContext = new MainWindowViewModel(ServiceProvider),
+        };
+
+        if (desktop.MainWindow is SetupWindow setupWindow)
+        {
+            setupWindow.Close();
+        }
+
+        desktop.MainWindow = mainWindow;
+        mainWindow.Show();
     }
 
     private void InitializeDatabase()

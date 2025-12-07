@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:BitCrafts.Certificates.Avalonia.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+             x:Class="BitCrafts.Certificates.Avalonia.Views.SetupView"
+             x:DataType="vm:SetupViewModel">
+
+    <Border Padding="40" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <StackPanel Spacing="20" MinWidth="400">
+            <TextBlock Text="Welcome to BitCrafts Certificates" 
+                       FontSize="24" 
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"/>
+            
+            <TextBlock Text="First-time Setup" 
+                       FontSize="18" 
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,20"/>
+
+            <TextBlock Text="Please configure your Certificate Authority domain. This will be used to generate your Root CA certificate."
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,10"/>
+
+            <TextBlock Text="Domain:" 
+                       FontWeight="SemiBold"
+                       Margin="0,10,0,5"/>
+            
+            <TextBox Text="{Binding Domain}" 
+                     Watermark="example.com"
+                     IsEnabled="{Binding !IsProcessing}"/>
+
+            <TextBlock Text="{Binding StatusMessage}"
+                       TextWrapping="Wrap"
+                       IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                       Margin="0,10,0,0"/>
+
+            <Button Content="Complete Setup"
+                    Command="{Binding CompleteSetupCommand}"
+                    IsEnabled="{Binding !IsProcessing}"
+                    HorizontalAlignment="Center"
+                    Padding="40,10"
+                    Margin="0,20,0,0"/>
+
+            <ProgressBar IsIndeterminate="True"
+                         IsVisible="{Binding IsProcessing}"
+                         Height="4"
+                         Margin="0,10,0,0"/>
+        </StackPanel>
+    </Border>
+</UserControl>

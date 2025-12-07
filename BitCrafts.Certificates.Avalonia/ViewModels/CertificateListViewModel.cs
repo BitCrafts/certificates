@@ -20,6 +20,7 @@ namespace BitCrafts.Certificates.Avalonia.ViewModels;
 public partial class CertificateListViewModel : ViewModelBase
 {
     private readonly ICertificateApplicationService _certificateService;
+    private readonly Action<long>? _onViewDetails;
 
     [ObservableProperty]
     private ObservableCollection<CertificateDto> _certificates = new();
@@ -33,9 +34,10 @@ public partial class CertificateListViewModel : ViewModelBase
     [ObservableProperty]
     private string _filterKind = "All";
 
-    public CertificateListViewModel(IServiceProvider serviceProvider)
+    public CertificateListViewModel(IServiceProvider serviceProvider, Action<long>? onViewDetails = null)
     {
         _certificateService = serviceProvider.GetRequiredService<ICertificateApplicationService>();
+        _onViewDetails = onViewDetails;
         _ = LoadCertificatesAsync();
     }
 
@@ -64,6 +66,13 @@ public partial class CertificateListViewModel : ViewModelBase
         {
             IsLoading = false;
         }
+    }
+
+    [RelayCommand]
+    private void ViewDetails()
+    {
+        if (SelectedCertificate == null) return;
+        _onViewDetails?.Invoke(SelectedCertificate.Id);
     }
 
     [RelayCommand]

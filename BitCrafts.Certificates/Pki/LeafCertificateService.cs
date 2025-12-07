@@ -16,7 +16,7 @@ namespace BitCrafts.Certificates.Pki;
 
 public interface ILeafCertificateService
 {
-    Task<long> IssueServerAsync(string fqdn, IEnumerable<string>? ipAddresses = null, CancellationToken ct = default);
+    Task<long> IssueServerAsync(string fqdn, IEnumerable<string>? ipAddresses = null, IEnumerable<string>? dnsNames = null, CancellationToken ct = default);
     Task<long> IssueClientAsync(string username, string? email = null, CancellationToken ct = default);
 }
 
@@ -37,13 +37,19 @@ public sealed class LeafCertificateService : ILeafCertificateService
         _audit = audit;
     }
 
-    public async Task<long> IssueServerAsync(string fqdn, IEnumerable<string>? ipAddresses = null, CancellationToken ct = default)
+    public async Task<long> IssueServerAsync(string fqdn, IEnumerable<string>? ipAddresses = null, IEnumerable<string>? dnsNames = null, CancellationToken ct = default)
     {
         if (!IsValidFqdn(fqdn)) throw new ArgumentException("Invalid FQDN", nameof(fqdn));
         var ips = (ipAddresses ?? Array.Empty<string>()).Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()).ToArray();
         foreach (var ip in ips)
         {
             if (!IPAddress.TryParse(ip, out _)) throw new ArgumentException($"Invalid IP: {ip}");
+        }
+        
+        var additionalDnsNames = (dnsNames ?? Array.Empty<string>()).Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()).ToArray();
+        foreach (var dns in additionalDnsNames)
+        {
+            if (!IsValidFqdn(dns)) throw new ArgumentException($"Invalid DNS name: {dns}");
         }
 
         // Load issuer (root CA)
@@ -69,6 +75,10 @@ public sealed class LeafCertificateService : ILeafCertificateService
         // SANs
         var san = new SubjectAlternativeNameBuilder();
         san.AddDnsName(fqdn);
+        foreach (var dns in additionalDnsNames)
+        {
+            san.AddDnsName(dns);
+        }
         foreach (var ip in ips)
         {
             if (IPAddress.TryParse(ip, out var ipObj)) san.AddIpAddress(ipObj);

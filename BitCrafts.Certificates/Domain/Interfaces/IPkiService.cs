@@ -14,7 +14,7 @@ namespace BitCrafts.Certificates.Domain.Interfaces;
 /// </summary>
 public interface IPkiService
 {
-    Task<Certificate> IssueServerCertificateAsync(string fqdn, string[]? ipAddresses = null, CancellationToken ct = default);
+    Task<Certificate> IssueServerCertificateAsync(string fqdn, string[]? ipAddresses = null, string[]? dnsNames = null, CancellationToken ct = default);
     Task<Certificate> IssueClientCertificateAsync(string username, string? email = null, CancellationToken ct = default);
     Task EnsureRootCAAsync(string domain, CancellationToken ct = default);
     Task<RootCA> GetRootCAAsync(CancellationToken ct = default);
