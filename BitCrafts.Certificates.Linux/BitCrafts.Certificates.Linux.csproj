@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageId>BitCrafts.Certificates.Linux</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>BitCrafts</Authors>
+    <Company>BitCrafts</Company>
+    <Description>Linux-specific implementations for certificate management using OpenSSL, GnuPG, OpenSSH, and standard Linux filesystem semantics.</Description>
+    <PackageLicenseExpression>AGPL-3.0-only</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/BitCrafts/certificates</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>certificates;ssl;tls;pki;linux;openssl;gpg</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BitCrafts.Certificates.Abstractions\BitCrafts.Certificates.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>
