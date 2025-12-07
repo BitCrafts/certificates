@@ -1,0 +1,55 @@
+name: Publish Abstractions Package
+
+on:
+  push:
+    tags:
+      - 'abstractions-v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Extract version from tag
+      id: get_version
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+        else
+          VERSION=${GITHUB_REF#refs/tags/abstractions-v}
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Restore dependencies
+      run: dotnet restore BitCrafts.Certificates.Abstractions/BitCrafts.Certificates.Abstractions.csproj
+
+    - name: Build
+      run: dotnet build BitCrafts.Certificates.Abstractions/BitCrafts.Certificates.Abstractions.csproj --configuration Release --no-restore
+
+    - name: Run tests
+      run: dotnet test BitCrafts.Certificates.Abstractions.Tests/BitCrafts.Certificates.Abstractions.Tests.csproj --configuration Release --no-build --verbosity normal
+
+    - name: Pack
+      run: dotnet pack BitCrafts.Certificates.Abstractions/BitCrafts.Certificates.Abstractions.csproj --configuration Release --no-build -p:PackageVersion=${{ steps.get_version.outputs.VERSION }} --output ./packages
+
+    - name: Publish to GitHub Packages
+      run: dotnet nuget push ./packages/*.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --skip-duplicate
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

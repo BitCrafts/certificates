@@ -1,168 +1,312 @@
 # BitCrafts Certificates
 
-Personal small Certificate Authority web app to run at home for issuing and managing server and client certificates.
+[![NuGet - Abstractions](https://img.shields.io/badge/NuGet-Abstractions-blue)](https://github.com/BitCrafts/certificates/packages)
+[![NuGet - Linux](https://img.shields.io/badge/NuGet-Linux-blue)](https://github.com/BitCrafts/certificates/packages)
+[![.NET 8.0](https://img.shields.io/badge/.NET-8.0-purple)](https://dotnet.microsoft.com/)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](LICENSE)
+
+Certificate Authority management suite for intranet and home lab environments with Linux-first design and RHEL administrator GUI workflow.
 
 ## Purpose
 
-- Provide a lightweight CA for home/intranet use.
-- Issue client and server certificates (ECDSA P-256) and record metadata.
-- Simple web UI to issue, list, and revoke certificates.
-- **NEW**: REST API for programmatic certificate management and deployment.
-- **NEW**: Automated certificate deployment via SSH or network filesystem.
-- Designed for personal/home deployment and experimentation; not a production-grade CA for public certificates.
+- Provide a lightweight CA for intranet/home lab use
+- Issue and manage server and client certificates (ECDSA P-256)
+- Support RHEL administrator workflows via GUI application
+- Deploy certificates securely to infrastructure via SSH or network filesystems
+- Store certificates encrypted in database using GPG
+- Designed for personal/home/intranet deployment; not for public-facing CAs
 
 ## Key Features
 
-- Root CA generation and storage under a configurable data directory.
-- Per-certificate key and PEM artifact generation (server and client certs).
-- Audit logging of issuance/revocation actions.
-- Simple SQLite-backed metadata store for issued certificates.
-- **NEW**: Clean Architecture design with separated domain, application, and infrastructure layers.
-- **NEW**: REST API for certificate management (Ansible-friendly).
-- **NEW**: Certificate deployment to remote systems via SSH or network filesystem.
-- **NEW**: Swagger/OpenAPI documentation for API.
-- Deployment helpers: systemd unit, self-contained publish support, optional Apache reverse proxy template, SELinux helpers.
+- **Modular Architecture**: Separate library packages for abstractions and Linux implementations
+- **GUI Application**: Avalonia-based cross-platform GUI for RHEL administrators
+- **Encrypted Storage**: Certificates stored encrypted in database using user's GPG key
+- **Flexible Deployment**: Deploy via SSH or to mounted network filesystems (NFS, GlusterFS, CephFS)
+- **Linux-Native**: Uses OpenSSL, GnuPG, and OpenSSH for certificate operations
+- **Security-Focused**: Least-privilege file operations, encrypted storage, audit logging
+- **NuGet Packages**: Published to GitHub Packages for easy consumption
 
 ## Architecture
 
-The application now follows **Clean Architecture** principles:
+The application is structured into separate library packages:
 
-- **Domain Layer**: Business entities and interfaces (Certificate, RootCA, deployment targets)
-- **Application Layer**: Use cases and application services
-- **Infrastructure Layer**: Implementations for database, storage, PKI, and deployment
-- **API Layer**: REST API controllers
-- **Presentation Layer**: MVC controllers and views
+### BitCrafts.Certificates.Abstractions
+- **Purpose**: Platform-agnostic domain models, interfaces, and contracts
+- **Contains**: 
+  - Interfaces: `ICertificateService`, `ICertificateRepository`, `IEncryptionService`, `IDeploymentWorkflowService`, `ITargetResolver`, `ISshClientFactory`, `IFileSystemDeployer`
+  - Domain models: `Certificate`, `CertificateMetadata`, `DeploymentWorkflow`, `DeploymentTarget`, `UserKeyReference`
+  - Results, exceptions, and DTOs
+- **Package**: Available on GitHub Packages
 
-See [docs/CLEAN_ARCHITECTURE.md](docs/CLEAN_ARCHITECTURE.md) for details.
+### BitCrafts.Certificates.Linux
+- **Purpose**: Linux-specific implementations using native tools
+- **Contains**:
+  - `CertificateServiceLinux`: Certificate creation with OpenSSL
+  - `EncryptionServiceGpg`: GPG-based encryption/decryption
+  - `SshClientFactoryOpenSsh`: SSH deployment using system ssh/scp
+  - `FileSystemDeployerLinux`: Deploy to local/NFS/Gluster/Ceph with proper permissions
+  - `DeploymentWorkflowServiceLinux`: Orchestrate deployment workflows
+  - `TargetResolverLinux`: Resolve and validate deployment targets
+  - Process wrappers for openssl, gpg, ssh with security validation
+- **Package**: Available on GitHub Packages
 
-## REST API
+### BitCrafts.Certificates.Avalonia
+- **Purpose**: Cross-platform GUI application for certificate management
+- **Target**: RHEL administrators running GUI workstation
+- **Features**:
+  - Create and manage certificates
+  - Configure and execute deployment workflows
+  - Encrypted certificate storage with GPG
+  - SSH and FileSystem deployment configuration
 
-The application exposes a REST API for:
-- Creating, listing, revoking, and deleting certificates
-- Downloading certificate archives
-- Deploying certificates to infrastructure
-- Testing deployment connections
+See [docs/DEPLOYMENT_WORKFLOWS.md](docs/DEPLOYMENT_WORKFLOWS.md) for deployment details.
 
-See [docs/API_USAGE.md](docs/API_USAGE.md) for API documentation and examples.
+## Certificate Deployment Workflows
 
-### API Endpoints
-
-- `POST /api/CertificatesApi/server` - Create server certificate
-- `POST /api/CertificatesApi/client` - Create client certificate
-- `GET /api/CertificatesApi` - List all certificates
-- `POST /api/CertificatesApi/{id}/revoke` - Revoke certificate
-- `POST /api/DeploymentApi/deploy` - Deploy certificate
-- `POST /api/DeploymentApi/test` - Test deployment connection
-
-API documentation available at `/swagger` in development mode.
-
-## Certificate Deployment
-
-The application can deploy certificates to infrastructure using:
+The application supports two deployment workflows:
 
 ### SSH Deployment
 Deploy certificates to remote servers via SSH/SCP:
-```bash
-POST /api/DeploymentApi/deploy
+- Uses system OpenSSH with public key authentication
+- Supports setting file ownership (chown) and permissions (chmod)
+- Automatically transfers and configures certificates on target servers
+
+Example target configuration:
+```csharp
+var target = new DeploymentTarget
 {
-  "certificateId": 123,
-  "deploymentTarget": {
-    "type": "SSH",
-    "target": "192.168.1.100",
-    "username": "deploy",
-    "privateKeyPath": "/path/to/key",
-    "destinationPath": "/etc/ssl/certs"
-  }
-}
+    HostnameOrIp = "server.example.com",
+    DestinationPath = "/etc/ssl/certs",
+    Username = "deploy",
+    Port = 22,
+    PrivateKeyPath = "/home/admin/.ssh/id_rsa",
+    Owner = "nginx",
+    Group = "nginx",
+    Permissions = "0600"
+};
 ```
 
 ### Network Filesystem Deployment
 Deploy certificates to mounted network shares:
-```bash
-POST /api/DeploymentApi/deploy
+- Supports local filesystems, NFS, GlusterFS, and CephFS
+- Applies proper file ownership and permissions
+- Ideal for clustered environments with shared storage
+
+Example target configuration:
+```csharp
+var target = new DeploymentTarget
 {
-  "certificateId": 123,
-  "deploymentTarget": {
-    "type": "NetworkFileSystem",
-    "target": "/mnt/network-share",
-    "destinationPath": "/mnt/network-share/certs"
-  }
+    HostnameOrIp = "local",
+    DestinationPath = "/mnt/nfs/certs",
+    Owner = "www-data",
+    Group = "www-data",
+    Permissions = "0644"
+};
+```
+
+See [docs/DEPLOYMENT_WORKFLOWS.md](docs/DEPLOYMENT_WORKFLOWS.md) for complete documentation.
+
+## Encrypted Certificate Storage
+
+Certificates are stored encrypted in the database:
+- Uses user's GPG key for encryption (public key) and decryption (private key)
+- Certificate data encrypted before database persistence
+- Decryption occurs transiently during deployment only
+- No plaintext certificate files written to disk during creation
+
+## Using the Packages
+
+### Installation
+
+Add the GitHub Packages source to your NuGet configuration:
+
+```bash
+dotnet nuget add source https://nuget.pkg.github.com/BitCrafts/index.json \
+  --name github \
+  --username YOUR_GITHUB_USERNAME \
+  --password YOUR_GITHUB_TOKEN \
+  --store-password-in-clear-text
+```
+
+Install the packages:
+
+```bash
+# Install abstractions
+dotnet add package BitCrafts.Certificates.Abstractions
+
+# Install Linux implementations
+dotnet add package BitCrafts.Certificates.Linux
+```
+
+### Example Usage
+
+```csharp
+using BitCrafts.Certificates.Abstractions.Interfaces;
+using BitCrafts.Certificates.Abstractions.Models;
+using BitCrafts.Certificates.Linux.Services;
+
+// Create services
+var certificateService = new CertificateServiceLinux();
+var encryptionService = new EncryptionServiceGpg();
+
+// Create a certificate
+var metadata = new CertificateMetadata
+{
+    CommonName = "server.example.com",
+    Type = CertificateType.Server,
+    ValidityDays = 365,
+    SubjectAlternativeNames = new List<string> { "*.example.com" }
+};
+
+var result = await certificateService.CreateCertificateAsync(metadata);
+if (result.Success && result.Certificate != null)
+{
+    // Encrypt certificate data
+    var gpgKey = new UserKeyReference { KeyId = "user@example.com" };
+    var encryptedData = await encryptionService.EncryptAsync(
+        result.Certificate.EncryptedData!,
+        gpgKey
+    );
+    
+    // Store encrypted data in database
+    result.Certificate.EncryptedData = encryptedData;
+    await repository.SaveAsync(result.Certificate);
 }
 ```
 
-## Ansible Integration
+## Running the GUI Application on RHEL
 
-The API is designed to work seamlessly with Ansible playbooks. Example:
+### Prerequisites
 
-```yaml
-- name: Deploy certificate
-  uri:
-    url: "http://localhost:5000/api/CertificatesApi/server"
-    method: POST
-    body_format: json
-    body:
-      fqdn: "{{ inventory_hostname }}"
-      ipAddresses: ["{{ ansible_default_ipv4.address }}"]
+- Red Hat Enterprise Linux 8 or later (or compatible: AlmaLinux, Rocky Linux)
+- .NET 8.0 Runtime
+- GnuPG (gpg) installed and configured with user's key
+- OpenSSL for certificate operations
+- OpenSSH client for SSH deployments (optional)
+- Access to mounted network filesystems for filesystem deployments (optional)
+
+### Setup
+
+1. **Install .NET 8.0 Runtime:**
+```bash
+sudo dnf install dotnet-runtime-8.0
 ```
 
-See [docs/API_USAGE.md](docs/API_USAGE.md) for complete Ansible examples.
+2. **Configure GPG Key:**
+```bash
+# Generate a GPG key if you don't have one
+gpg --gen-key
 
-## Security hardening applied
+# List your keys to get the key ID
+gpg --list-keys
+```
 
-- Private keys and certs are written atomically to temporary files then moved into place to reduce exposure during write operations.
-- File permissions are tightened to owner-only (0600 for private keys; 0700 for directories where appropriate).
-- Audit log uses the application data logs dir and file permissions are set to 0600.
-- Minimal server-side validation for FQDN/user inputs.
-- CSP, HSTS, and several security headers are set by middleware.
-- **NEW**: Deployment operations use secure SSH connections with key-based authentication.
-- **NEW**: File permissions automatically set on deployed certificates.
+3. **Configure Database Connection:**
+The application uses SQLite by default. Configure the data directory:
+```bash
+export BITCRAFTS_DATA_DIR="/var/lib/bitcrafts/certificates"
+export BITCRAFTS_DB_PATH="/var/lib/bitcrafts/certificates/certificates.db"
+```
 
-## Deployment
+4. **Run the GUI Application:**
+```bash
+dotnet BitCrafts.Certificates.Avalonia.dll
+```
 
-- The `deploy/` folder contains an AlmaLinux-focused deployment script:
-  - `deploy/deploy_almalinux.sh` — builds and installs the app to `/opt/bitcrafts/certificates` and data under `/srv/bitcrafts/certificates`.
-  - `deploy/bitcrafts.service` — systemd unit (uses `/opt/bitcrafts/certificates/run.sh` wrapper).
-  - `deploy/run.sh` — wrapper that runs the self-contained binary when present or falls back to `dotnet <dll>`.
-  - `deploy/apache/bitcrafts.conf` — Apache httpd reverse-proxy sample (TLS termination config placeholder).
+### Configuring Deployment Workflows
 
-- The deploy script supports:
-  - `--no-self-contained` (framework-dependent publish)
-  - `--rid <rid>` override for self-contained publish
-  - `--install-apache` to install a reverse proxy configuration
-  - `--selinux` to apply SELinux file contexts and booleans (best-effort)
+See [docs/DEPLOYMENT_WORKFLOWS.md](docs/DEPLOYMENT_WORKFLOWS.md) for detailed instructions on:
+- Setting up SSH key-based authentication
+- Mounting network filesystems (NFS, GlusterFS, CephFS)
+- Configuring deployment targets
+- Security best practices
 
-## Building and Running
+## Building and Testing
 
 ```bash
-# Build
+# Build all projects
 dotnet build
 
-# Run in development mode
-dotnet run --project BitCrafts.Certificates
+# Run unit tests
+dotnet test
 
-# Access the application
-# Web UI: http://localhost:5000
-# API: http://localhost:5000/api
-# Swagger: http://localhost:5000/swagger
+# Build specific package
+dotnet build BitCrafts.Certificates.Abstractions/BitCrafts.Certificates.Abstractions.csproj
+dotnet build BitCrafts.Certificates.Linux/BitCrafts.Certificates.Linux.csproj
 ```
+
+## Security
+
+- **Encrypted Storage**: Certificates encrypted with GPG before database storage
+- **Least Privilege**: File operations use explicit chmod/chown with minimal permissions
+- **Input Validation**: All external command parameters validated and escaped
+- **No Plaintext Files**: Certificate data never written unencrypted to disk during creation
+- **Audit Logging**: All operations logged without exposing sensitive key material
+- **Secure Deployment**: SSH uses key-based authentication; filesystem deployments apply proper permissions
 
 ## Technology Stack
 
-- **ASP.NET Core 8.0** - Web framework
-- **SQLite** - Database (easily replaceable with PostgreSQL, MySQL, etc.)
-- **Swashbuckle** - OpenAPI/Swagger documentation
-- **Clean Architecture** - Design pattern
-- **ECDSA P-256** - Cryptography
+- **.NET 8.0** - Runtime platform
+- **Avalonia 11.x** - Cross-platform UI framework
+- **SQLite** - Default database (replaceable with PostgreSQL, MySQL, etc.)
+- **OpenSSL** - Certificate generation (via process wrapper)
+- **GnuPG** - Certificate encryption/decryption
+- **OpenSSH** - Remote deployment
+- **xUnit + FluentAssertions** - Testing
+
+## Project Structure
+
+```
+BitCrafts.Certificates/
+├── BitCrafts.Certificates.Abstractions/     # Platform-agnostic interfaces and models
+├── BitCrafts.Certificates.Linux/            # Linux-specific implementations
+├── BitCrafts.Certificates.Avalonia/         # GUI application
+├── BitCrafts.Certificates.Abstractions.Tests/  # Abstractions unit tests
+├── BitCrafts.Certificates.Linux.Tests/      # Linux implementation tests
+├── docs/                                     # Documentation
+│   └── DEPLOYMENT_WORKFLOWS.md              # Deployment workflow guide
+├── .github/workflows/                        # CI/CD workflows
+│   ├── publish-abstractions.yml
+│   └── publish-linux.yml
+└── nuget.config                             # NuGet package sources
+```
+
+## Publishing Packages
+
+Packages are automatically published to GitHub Packages when tags are pushed:
+
+```bash
+# Publish Abstractions package
+git tag abstractions-v1.0.0
+git push origin abstractions-v1.0.0
+
+# Publish Linux package
+git tag linux-v1.0.0
+git push origin linux-v1.0.0
+```
+
+Or manually trigger via GitHub Actions workflow dispatch.
+
+## Contributing
+
+This project is designed for intranet/home lab use. Contributions welcome for:
+- Additional deployment methods
+- Platform-specific implementations (Windows, macOS)
+- Database provider implementations
+- Enhanced security features
+- Bug fixes and documentation improvements
 
 ## Future Enhancements
 
-- Additional database support (PostgreSQL, MySQL, SQL Server)
-- Cloud storage adapters (S3, Azure Blob)
-- Additional deployment methods (Kubernetes, Docker)
-- API authentication (API keys, JWT, mutual TLS)
-- Web UI for deployment management
+- Windows and macOS implementations
+- Additional database providers (PostgreSQL, MySQL, SQL Server)
+- Kubernetes Secret deployment support
+- Automated certificate rotation
+- Web-based management interface (optional)
+- Integration with external CAs (Let's Encrypt, etc.)
 
-# License
+## License
 
 This project is licensed under AGPLv3 (Affero GPL v3). See `LICENSE` for the full text.
+
 
