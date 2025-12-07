@@ -10,6 +10,13 @@ using BitCrafts.Certificates.Data.Repositories;
 using BitCrafts.Certificates.Options;
 using BitCrafts.Certificates.Pki;
 using BitCrafts.Certificates.Services;
+using BitCrafts.Certificates.Domain.Interfaces;
+using BitCrafts.Certificates.Application.Interfaces;
+using BitCrafts.Certificates.Application.Services;
+using BitCrafts.Certificates.Infrastructure.Database;
+using BitCrafts.Certificates.Infrastructure.Storage;
+using BitCrafts.Certificates.Infrastructure.Pki;
+using BitCrafts.Certificates.Infrastructure.Deployment;
 using Microsoft.AspNetCore.Http;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,8 +52,33 @@ builder.Services.AddSingleton<ILeafCertificateService, LeafCertificateService>()
 builder.Services.AddSingleton<IAuditLogger, AuditLogger>();
 builder.Services.AddSingleton<IRevocationStore, RevocationStore>();
 
-// MVC
+// Clean Architecture Layers
+// Domain Layer Ports (Interfaces) - Infrastructure implementations
+builder.Services.AddSingleton<ICertificateRepository, CertificateRepositoryAdapter>();
+builder.Services.AddSingleton<ICertificateStorage, LocalFileSystemStorage>();
+builder.Services.AddSingleton<IPkiService, PkiServiceAdapter>();
+
+// Deployment Services
+builder.Services.AddSingleton<SshDeploymentService>();
+builder.Services.AddSingleton<NetworkFileSystemDeploymentService>();
+builder.Services.AddSingleton<IDeploymentService, CompositeDeploymentService>();
+
+// Application Services
+builder.Services.AddScoped<ICertificateApplicationService, CertificateApplicationService>();
+builder.Services.AddScoped<IDeploymentApplicationService, DeploymentApplicationService>();
+
+// MVC and API
 builder.Services.AddControllersWithViews();
+builder.Services.AddControllers(); // For API controllers
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { 
+        Title = "BitCrafts Certificates API", 
+        Version = "v1",
+        Description = "REST API for certificate management and deployment"
+    });
+});
 
 // Antiforgery: prefer header-based tokens for XHR and enforce secure cookie options by default (controllers already use ValidateAntiForgeryToken)
 builder.Services.AddAntiforgery(options =>
@@ -65,7 +97,15 @@ var schema = app.Services.GetRequiredService<ISchemaBootstrapper>();
 await schema.EnsureInitializedAsync();
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "BitCrafts Certificates API v1");
+    });
+}
+else
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
@@ -124,6 +164,9 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Map API controllers
+app.MapControllers();
 
 app.Run();
 

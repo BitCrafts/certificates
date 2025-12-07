@@ -6,7 +6,7 @@
 // You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>. 
 *@
 
-@model IReadOnlyList<BitCrafts.Certificates.Models.CertificateRecord>
+@model IReadOnlyList<BitCrafts.Certificates.Application.DTOs.CertificateDto>
 @{
     ViewData["Title"] = "Client Certificates";
 }
@@ -42,8 +42,8 @@ else
             <tr>
                 <td>@c.Id</td>
                 <td>@c.Subject</td>
-                <td>@c.SanDns</td>
-                <td>@c.NotAfter</td>
+                <td>@(c.SanEmail ?? c.SanDns)</td>
+                <td>@c.NotAfter.ToString("yyyy-MM-dd HH:mm")</td>
                 <td><span class="badge bg-secondary">@c.Status</span></td>
                 <td>
                     <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@c.Id">Details</a>
