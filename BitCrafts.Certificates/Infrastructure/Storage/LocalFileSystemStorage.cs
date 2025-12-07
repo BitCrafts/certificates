@@ -24,7 +24,16 @@ public sealed class LocalFileSystemStorage : ICertificateStorage
 
     public async Task<string> SaveCertificateAsync(string name, byte[] content, CancellationToken ct = default)
     {
-        var path = Path.Combine(Path.GetTempPath(), name);
+        // Note: In production, this should use a dedicated secure directory
+        // For now, using temp path but with restrictive permissions
+        var path = Path.Combine(Path.GetTempPath(), "bitcrafts_certs", name);
+        var dir = Path.GetDirectoryName(path);
+        if (dir != null && !Directory.Exists(dir))
+        {
+            Directory.CreateDirectory(dir);
+            FileUtils.TrySet0700(dir);
+        }
+        
         await File.WriteAllBytesAsync(path, content, ct);
         FileUtils.TrySet0600(path);
         _logger.LogDebug("Saved certificate to {Path}", path);
@@ -33,7 +42,16 @@ public sealed class LocalFileSystemStorage : ICertificateStorage
 
     public async Task<string> SavePrivateKeyAsync(string name, byte[] content, CancellationToken ct = default)
     {
-        var path = Path.Combine(Path.GetTempPath(), name);
+        // Note: In production, this should use a dedicated secure directory
+        // For now, using temp path but with restrictive permissions
+        var path = Path.Combine(Path.GetTempPath(), "bitcrafts_certs", name);
+        var dir = Path.GetDirectoryName(path);
+        if (dir != null && !Directory.Exists(dir))
+        {
+            Directory.CreateDirectory(dir);
+            FileUtils.TrySet0700(dir);
+        }
+        
         await File.WriteAllBytesAsync(path, content, ct);
         FileUtils.TrySet0600(path);
         _logger.LogDebug("Saved private key to {Path}", path);

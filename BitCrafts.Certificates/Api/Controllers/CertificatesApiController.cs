@@ -125,10 +125,9 @@ public class CertificatesApiController : ControllerBase
     [HttpPost("{id}/revoke")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Revoke(long id, [FromBody] RevokeCertificateDto? request, CancellationToken ct)
+    public async Task<IActionResult> Revoke(long id, CancellationToken ct)
     {
-        request ??= new RevokeCertificateDto { CertificateId = id };
-        request.CertificateId = id;
+        var request = new RevokeCertificateDto { CertificateId = id };
 
         var success = await _certificateService.RevokeCertificateAsync(request, ct);
         if (!success)

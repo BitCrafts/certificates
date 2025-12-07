@@ -48,6 +48,7 @@ public sealed class SshDeploymentService : IDeploymentService
                 scpArgs.Add(target.PrivateKeyPath);
             }
 
+            // Note: scp uses -P (uppercase) for port, unlike ssh which uses -p (lowercase)
             scpArgs.Add("-P");
             scpArgs.Add(port.ToString());
             scpArgs.Add(certificatePath);
