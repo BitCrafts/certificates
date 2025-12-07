@@ -21,6 +21,8 @@ using BitCrafts.Certificates.Infrastructure.Pki;
 using BitCrafts.Certificates.Infrastructure.Deployment;
 using BitCrafts.Certificates.Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using System.IO;
 
 namespace BitCrafts.Certificates.Avalonia;
 
@@ -46,12 +48,22 @@ sealed class Program
     {
         var services = new ServiceCollection();
 
-        // Configure data options
+        // Build configuration
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production"}.json", optional: true, reloadOnChange: true)
+            .AddEnvironmentVariables()
+            .Build();
+
+        services.AddSingleton<IConfiguration>(configuration);
+
+        // Configure data options from configuration
         var dataOptions = new DataOptions
         {
-            DataDir = Environment.GetEnvironmentVariable("BITCRAFTS_DATA_DIR"),
-            DbPath = Environment.GetEnvironmentVariable("BITCRAFTS_DB_PATH"),
-            Domain = Environment.GetEnvironmentVariable("BITCRAFTS_DOMAIN")
+            DataDir = configuration["BitCrafts:DataDir"] ?? Environment.GetEnvironmentVariable("BITCRAFTS_DATA_DIR"),
+            DbPath = configuration["BitCrafts:DbPath"] ?? Environment.GetEnvironmentVariable("BITCRAFTS_DB_PATH"),
+            Domain = configuration["BitCrafts:Domain"] ?? Environment.GetEnvironmentVariable("BITCRAFTS_DOMAIN")
         };
         services.AddSingleton(dataOptions);
 
@@ -86,7 +98,11 @@ sealed class Program
         services.AddScoped<IDeploymentApplicationService, DeploymentApplicationService>();
 
         // Logging
-        services.AddLogging(builder => builder.AddConsole());
+        services.AddLogging(builder => 
+        {
+            builder.AddConfiguration(configuration.GetSection("Logging"));
+            builder.AddConsole();
+        });
 
         return services.BuildServiceProvider();
     }
