@@ -32,4 +32,12 @@ public partial class MainWindow : Window
             vm.ShowCreateCertificate();
         }
     }
+
+    private void ShowDeployment_Click(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+        {
+            vm.ShowDeployment();
+        }
+    }
 }

@@ -1,0 +1,165 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:BitCrafts.Certificates.Avalonia.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="BitCrafts.Certificates.Avalonia.Views.DeploymentView"
+             x:DataType="vm:DeploymentViewModel">
+
+  <ScrollViewer>
+    <StackPanel Margin="20" Spacing="20">
+      
+      <!-- Header -->
+      <TextBlock Text="Deploy SSL Certificate"
+                 FontSize="24"
+                 FontWeight="Bold" />
+
+      <TextBlock Text="Deploy certificates to remote servers via SSH or network filesystems"
+                 FontSize="14"
+                 Foreground="Gray" />
+
+      <!-- Certificate Selection -->
+      <Border BorderBrush="LightGray" BorderThickness="1" Padding="15" CornerRadius="5">
+        <StackPanel Spacing="10">
+          <TextBlock Text="1. Select Certificate"
+                     FontSize="16"
+                     FontWeight="SemiBold" />
+          
+          <ComboBox ItemsSource="{Binding Certificates}"
+                    SelectedItem="{Binding SelectedCertificate}"
+                    HorizontalAlignment="Stretch"
+                    MinWidth="400">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel>
+                  <TextBlock Text="{Binding Subject}" FontWeight="Bold" />
+                  <TextBlock Text="{Binding Kind}" FontSize="11" Foreground="Gray" />
+                </StackPanel>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </StackPanel>
+      </Border>
+
+      <!-- Deployment Type -->
+      <Border BorderBrush="LightGray" BorderThickness="1" Padding="15" CornerRadius="5">
+        <StackPanel Spacing="10">
+          <TextBlock Text="2. Select Deployment Type"
+                     FontSize="16"
+                     FontWeight="SemiBold" />
+          
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button Content="SSH"
+                    Command="{Binding SelectDeploymentTypeCommand}"
+                    CommandParameter="SSH"
+                    Width="120"
+                    Height="40" />
+            <Button Content="Network Filesystem"
+                    Command="{Binding SelectDeploymentTypeCommand}"
+                    CommandParameter="NetworkFileSystem"
+                    Width="180"
+                    Height="40" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- Deployment Configuration -->
+      <Border BorderBrush="LightGray" BorderThickness="1" Padding="15" CornerRadius="5">
+        <StackPanel Spacing="10">
+          <TextBlock Text="3. Configure Deployment"
+                     FontSize="16"
+                     FontWeight="SemiBold" />
+
+          <!-- Common Fields -->
+          <StackPanel Spacing="8">
+            <TextBlock Text="Target (hostname or IP):" />
+            <TextBox Text="{Binding Target}"
+                     Watermark="e.g., server.example.com or 192.168.1.100"
+                     Width="400"
+                     HorizontalAlignment="Left" />
+          </StackPanel>
+
+          <StackPanel Spacing="8">
+            <TextBlock Text="Destination Path:" />
+            <TextBox Text="{Binding DestinationPath}"
+                     Watermark="e.g., /etc/ssl/certs or /mnt/nfs/certs"
+                     Width="400"
+                     HorizontalAlignment="Left" />
+          </StackPanel>
+
+          <!-- SSH-specific Fields -->
+          <StackPanel Spacing="8" IsVisible="{Binding ShowSshFields}">
+            <TextBlock Text="SSH Username:" />
+            <TextBox Text="{Binding Username}"
+                     Watermark="e.g., deploy or admin"
+                     Width="400"
+                     HorizontalAlignment="Left" />
+          </StackPanel>
+
+          <StackPanel Spacing="8" IsVisible="{Binding ShowSshFields}">
+            <TextBlock Text="SSH Private Key Path:" />
+            <TextBox Text="{Binding PrivateKeyPath}"
+                     Watermark="e.g., /home/user/.ssh/id_rsa"
+                     Width="400"
+                     HorizontalAlignment="Left" />
+          </StackPanel>
+
+          <StackPanel Spacing="8" IsVisible="{Binding ShowSshFields}">
+            <TextBlock Text="SSH Port:" />
+            <NumericUpDown Value="{Binding Port}"
+                          Minimum="1"
+                          Maximum="65535"
+                          Width="150"
+                          HorizontalAlignment="Left" />
+          </StackPanel>
+
+          <!-- Network Filesystem Info -->
+          <StackPanel Spacing="8" IsVisible="{Binding !ShowSshFields}">
+            <Border Background="LightBlue" Padding="10" CornerRadius="5">
+              <TextBlock TextWrapping="Wrap">
+                <Run Text="Network Filesystem Deployment" FontWeight="Bold" />
+                <LineBreak />
+                Ensure the destination path is accessible as a mounted network share (NFS, GlusterFS, CephFS).
+                The application will copy certificates to the specified path with appropriate permissions.
+              </TextBlock>
+            </Border>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- Actions -->
+      <Border BorderBrush="LightGray" BorderThickness="1" Padding="15" CornerRadius="5">
+        <StackPanel Spacing="10">
+          <TextBlock Text="4. Deploy"
+                     FontSize="16"
+                     FontWeight="SemiBold" />
+
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button Content="Test Connection"
+                    Command="{Binding TestConnectionCommand}"
+                    IsEnabled="{Binding !IsTesting}"
+                    Width="150"
+                    Height="40" />
+            
+            <Button Content="Deploy Certificate"
+                    Command="{Binding DeployCertificateCommand}"
+                    IsEnabled="{Binding !IsDeploying}"
+                    Width="180"
+                    Height="40"
+                    Classes="accent" />
+          </StackPanel>
+
+          <!-- Status Message -->
+          <TextBlock Text="{Binding StatusMessage}"
+                     FontSize="14"
+                     FontWeight="SemiBold"
+                     TextWrapping="Wrap"
+                     IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        </StackPanel>
+      </Border>
+
+    </StackPanel>
+  </ScrollViewer>
+
+</UserControl>

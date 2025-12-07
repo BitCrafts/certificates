@@ -30,6 +30,11 @@
                         Click="ShowCreateCertificate_Click"
                         HorizontalAlignment="Stretch" 
                         Margin="0,5"/>
+                
+                <Button Content="Deploy Certificates" 
+                        Click="ShowDeployment_Click"
+                        HorizontalAlignment="Stretch" 
+                        Margin="0,5"/>
             </StackPanel>
         </Border>
 
@@ -44,6 +49,9 @@
                 </DataTemplate>
                 <DataTemplate DataType="vm:CertificateDetailsViewModel">
                     <views:CertificateDetailsView />
+                </DataTemplate>
+                <DataTemplate DataType="vm:DeploymentViewModel">
+                    <views:DeploymentView />
                 </DataTemplate>
             </ContentControl.DataTemplates>
         </ContentControl>
