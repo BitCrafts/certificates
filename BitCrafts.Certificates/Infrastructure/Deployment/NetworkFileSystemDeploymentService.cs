@@ -22,7 +22,7 @@ public sealed class NetworkFileSystemDeploymentService : IDeploymentService
         _logger = logger;
     }
 
-    public async Task<bool> DeployAsync(DeploymentTarget target, string certificatePath, string keyPath, CancellationToken ct = default)
+    public Task<bool> DeployAsync(DeploymentTarget target, string certificatePath, string keyPath, CancellationToken ct = default)
     {
         if (target.Type != DeploymentType.NetworkFileSystem)
         {
@@ -59,12 +59,12 @@ public sealed class NetworkFileSystemDeploymentService : IDeploymentService
             }
 
             _logger.LogInformation("Successfully deployed certificates to {Path}", destPath);
-            return true;
+            return Task.FromResult(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deploying certificates to network path {Target}", target.Target);
-            return false;
+            return Task.FromResult(false);
         }
     }
 
