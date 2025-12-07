@@ -37,9 +37,21 @@
                     CornerRadius="4"
                     Margin="0,0,0,20">
                 <StackPanel>
-                    <TextBlock Text="Server FQDN *" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <TextBlock Text="Server FQDN (Primary Name) *" FontWeight="Bold" Margin="0,0,0,5"/>
                     <TextBox Text="{Binding Fqdn}" 
                              Watermark="server.example.com"
+                             Margin="0,0,0,15"/>
+
+                    <TextBlock Text="Additional DNS Names (comma-separated)" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <TextBlock Text="Optional: Add alternative domain names for this certificate" 
+                               FontSize="11" 
+                               Foreground="Gray" 
+                               Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding DnsNames}" 
+                             Watermark="server2.example.com, server3.example.com"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             Height="60"
                              Margin="0,0,0,15"/>
 
                     <TextBlock Text="IP Addresses (comma-separated)" FontWeight="Bold" Margin="0,0,0,5"/>

@@ -28,6 +28,7 @@ public sealed class CreateServerCertificateDto
 {
     public required string Fqdn { get; set; }
     public string[]? IpAddresses { get; set; }
+    public string[]? DnsNames { get; set; }
 }
 
 public sealed class CreateClientCertificateDto

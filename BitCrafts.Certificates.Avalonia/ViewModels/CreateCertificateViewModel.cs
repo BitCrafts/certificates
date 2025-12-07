@@ -28,6 +28,9 @@ public partial class CreateCertificateViewModel : ViewModelBase
     private string _fqdn = string.Empty;
 
     [ObservableProperty]
+    private string _dnsNames = string.Empty;
+
+    [ObservableProperty]
     private string _ipAddresses = string.Empty;
 
     [ObservableProperty]
@@ -63,10 +66,16 @@ public partial class CreateCertificateViewModel : ViewModelBase
                     .Select(ip => ip.Trim())
                     .ToArray();
 
+                var dns = DnsNames
+                    .Split(new[] { ',', ' ', ';', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(d => d.Trim())
+                    .ToArray();
+
                 var dto = new CreateServerCertificateDto
                 {
                     Fqdn = Fqdn.Trim(),
-                    IpAddresses = ips.Length > 0 ? ips : null
+                    IpAddresses = ips.Length > 0 ? ips : null,
+                    DnsNames = dns.Length > 0 ? dns : null
                 };
 
                 await _certificateService.CreateServerCertificateAsync(dto);
@@ -86,6 +95,7 @@ public partial class CreateCertificateViewModel : ViewModelBase
 
             // Clear form
             Fqdn = string.Empty;
+            DnsNames = string.Empty;
             IpAddresses = string.Empty;
             Username = string.Empty;
             Email = string.Empty;

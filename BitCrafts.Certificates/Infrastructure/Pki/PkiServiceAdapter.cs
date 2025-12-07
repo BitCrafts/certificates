@@ -34,9 +34,9 @@ public sealed class PkiServiceAdapter : IPkiService
         _logger = logger;
     }
 
-    public async Task<Certificate> IssueServerCertificateAsync(string fqdn, string[]? ipAddresses = null, CancellationToken ct = default)
+    public async Task<Certificate> IssueServerCertificateAsync(string fqdn, string[]? ipAddresses = null, string[]? dnsNames = null, CancellationToken ct = default)
     {
-        var id = await _leafService.IssueServerAsync(fqdn, ipAddresses ?? Array.Empty<string>());
+        var id = await _leafService.IssueServerAsync(fqdn, ipAddresses ?? Array.Empty<string>(), dnsNames ?? Array.Empty<string>());
         var record = await _certRepo.GetAsync(id);
         
         if (record == null)
