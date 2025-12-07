@@ -2,8 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitCrafts.Certificates", "BitCrafts.Certificates\BitCrafts.Certificates.csproj", "{2F77AB55-753A-4040-8D68-4F4C3C97C0AB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitCrafts.Certificates.Tests", "BitCrafts.Certificates.Tests\BitCrafts.Certificates.Tests.csproj", "{B226C449-6729-4D58-829A-5EA1D27C5E88}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitCrafts.Certificates.Avalonia", "BitCrafts.Certificates.Avalonia\BitCrafts.Certificates.Avalonia.csproj", "{A6F9CD8D-4EE5-421D-B7FC-2A9475F3F3C2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitCrafts.Certificates.Abstractions", "BitCrafts.Certificates.Abstractions\BitCrafts.Certificates.Abstractions.csproj", "{165D29DC-DA53-4469-B875-A7750D489C6D}"
@@ -36,18 +34,6 @@ Global
 		{2F77AB55-753A-4040-8D68-4F4C3C97C0AB}.Release|x64.Build.0 = Release|Any CPU
 		{2F77AB55-753A-4040-8D68-4F4C3C97C0AB}.Release|x86.ActiveCfg = Release|Any CPU
 		{2F77AB55-753A-4040-8D68-4F4C3C97C0AB}.Release|x86.Build.0 = Release|Any CPU
-		{B226C449-6729-4D58-829A-5EA1D27C5E88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B226C449-6729-4D58-829A-5EA1D27C5E88}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B226C449-6729-4D58-829A-5EA1D27C5E88}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{B226C449-6729-4D58-829A-5EA1D27C5E88}.Debug|x64.Build.0 = Debug|Any CPU
-		{B226C449-6729-4D58-829A-5EA1D27C5E88}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{B226C449-6729-4D58-829A-5EA1D27C5E88}.Debug|x86.Build.0 = Debug|Any CPU
-		{B226C449-6729-4D58-829A-5EA1D27C5E88}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B226C449-6729-4D58-829A-5EA1D27C5E88}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B226C449-6729-4D58-829A-5EA1D27C5E88}.Release|x64.ActiveCfg = Release|Any CPU
-		{B226C449-6729-4D58-829A-5EA1D27C5E88}.Release|x64.Build.0 = Release|Any CPU
-		{B226C449-6729-4D58-829A-5EA1D27C5E88}.Release|x86.ActiveCfg = Release|Any CPU
-		{B226C449-6729-4D58-829A-5EA1D27C5E88}.Release|x86.Build.0 = Release|Any CPU
 		{A6F9CD8D-4EE5-421D-B7FC-2A9475F3F3C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A6F9CD8D-4EE5-421D-B7FC-2A9475F3F3C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A6F9CD8D-4EE5-421D-B7FC-2A9475F3F3C2}.Debug|x64.ActiveCfg = Debug|Any CPU

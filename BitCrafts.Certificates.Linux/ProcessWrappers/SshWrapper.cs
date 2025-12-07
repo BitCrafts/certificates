@@ -21,7 +21,7 @@ public class SshWrapper : ProcessWrapperBase
     {
         var argsList = new List<string>
         {
-            "-o", "StrictHostKeyChecking=no",
+            "-o", "StrictHostKeyChecking=yes",
             "-o", "BatchMode=yes"
         };
 
@@ -55,7 +55,7 @@ public class SshWrapper : ProcessWrapperBase
     {
         var argsList = new List<string>
         {
-            "-o", "StrictHostKeyChecking=no",
+            "-o", "StrictHostKeyChecking=yes",
             "-o", "BatchMode=yes"
         };
 
