@@ -5,63 +5,70 @@
 [![.NET 8.0](https://img.shields.io/badge/.NET-8.0-purple)](https://dotnet.microsoft.com/)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](LICENSE)
 
-Certificate Authority management suite for intranet and home lab environments with Linux-first design and RHEL administrator GUI workflow.
+Certificate Authority management suite for intranet and home lab environments with cross-platform desktop GUI application.
 
 ## Purpose
 
 - Provide a lightweight CA for intranet/home lab use
 - Issue and manage server and client certificates (ECDSA P-256)
-- Support RHEL administrator workflows via GUI application
+- Cross-platform desktop GUI using Avalonia (Windows, Linux, macOS)
 - Deploy certificates securely to infrastructure via SSH or network filesystems
-- Store certificates encrypted in database using GPG
+- Audit logging and certificate lifecycle management
 - Designed for personal/home/intranet deployment; not for public-facing CAs
 
 ## Key Features
 
-- **Modular Architecture**: Separate library packages for abstractions and Linux implementations
-- **GUI Application**: Avalonia-based cross-platform GUI for RHEL administrators
-- **Encrypted Storage**: Certificates stored encrypted in database using user's GPG key
-- **Flexible Deployment**: Deploy via SSH or to mounted network filesystems (NFS, GlusterFS, CephFS)
-- **Linux-Native**: Uses OpenSSL, GnuPG, and OpenSSH for certificate operations
-- **Security-Focused**: Least-privilege file operations, encrypted storage, audit logging
-- **NuGet Packages**: Published to GitHub Packages for easy consumption
+- **Cross-Platform GUI**: Avalonia-based desktop application for Windows, Linux, and macOS
+- **Certificate Management**: Create, view, revoke, and download server/client certificates
+- **Deployment Support**: Deploy certificates via SSH or network filesystems (NFS, GlusterFS, CephFS)
+- **Clean Architecture**: Separated business logic, domain, and infrastructure layers
+- **Modular Libraries**: Reusable NuGet packages for abstractions and platform-specific implementations
+- **Security-Focused**: Least-privilege file operations, secure storage, audit logging
+- **SQLite Database**: Lightweight certificate metadata storage
 
 ## Architecture
 
-The application is structured into separate library packages:
+The application is structured into modular components:
+
+### BitCrafts.Certificates (Business Logic Library)
+- **Purpose**: Core business logic, domain models, and infrastructure
+- **Contains**:
+  - **Application Layer**: DTOs, interfaces, and application services
+  - **Domain Layer**: Domain entities, value objects, and interfaces
+  - **Infrastructure Layer**: Database, storage, PKI, and deployment implementations
+  - **Data Layer**: Repository implementations and database access
+  - **Services**: Audit logging, revocation management, CA services
+- **Used By**: Avalonia GUI application
 
 ### BitCrafts.Certificates.Abstractions
 - **Purpose**: Platform-agnostic domain models, interfaces, and contracts
-- **Contains**: 
-  - Interfaces: `ICertificateService`, `ICertificateRepository`, `IEncryptionService`, `IDeploymentWorkflowService`, `ITargetResolver`, `ISshClientFactory`, `IFileSystemDeployer`
-  - Domain models: `Certificate`, `CertificateMetadata`, `DeploymentWorkflow`, `DeploymentTarget`, `UserKeyReference`
-  - Results, exceptions, and DTOs
+- **Contains**: Platform-independent abstractions for certificate management
 - **Package**: Available on GitHub Packages
 
 ### BitCrafts.Certificates.Linux
 - **Purpose**: Linux-specific implementations using native tools
 - **Contains**:
-  - `CertificateServiceLinux`: Certificate creation with OpenSSL
-  - `EncryptionServiceGpg`: GPG-based encryption/decryption
-  - `SshClientFactoryOpenSsh`: SSH deployment using system ssh/scp
-  - `FileSystemDeployerLinux`: Deploy to local/NFS/Gluster/Ceph with proper permissions
-  - `DeploymentWorkflowServiceLinux`: Orchestrate deployment workflows
-  - `TargetResolverLinux`: Resolve and validate deployment targets
-  - Process wrappers for openssl, gpg, ssh with security validation
+  - Certificate operations using OpenSSL
+  - GPG-based encryption/decryption
+  - SSH deployment using system ssh/scp
+  - Network filesystem deployment support
 - **Package**: Available on GitHub Packages
 
 ### BitCrafts.Certificates.Avalonia
-- **Purpose**: Cross-platform GUI application for certificate management
-- **Target**: RHEL administrators running GUI workstation
+- **Purpose**: Cross-platform desktop GUI application
 - **Features**:
-  - Create and manage certificates
-  - Configure and execute deployment workflows
-  - Encrypted certificate storage with GPG
-  - SSH and FileSystem deployment configuration
+  - Certificate list view with filtering (all, server, client)
+  - Create server/client certificates with custom parameters
+  - View certificate details (subject, validity, status)
+  - Revoke certificates with confirmation dialog
+  - Download certificates as tar.gz archives
+  - Deploy certificates via SSH or network filesystems
+  - Setup wizard for initial configuration
+- **Platforms**: Windows, Linux, macOS
+- **Framework**: Avalonia 11.x with MVVM pattern
+- **Package**: Available on GitHub Packages
 
-See [docs/DEPLOYMENT_WORKFLOWS.md](docs/DEPLOYMENT_WORKFLOWS.md) for deployment details.
-
-## Certificate Deployment Workflows
+## Certificate Deployment
 
 The application supports two deployment workflows:
 
@@ -106,13 +113,66 @@ var target = new DeploymentTarget
 
 See [docs/DEPLOYMENT_WORKFLOWS.md](docs/DEPLOYMENT_WORKFLOWS.md) for complete documentation.
 
-## Encrypted Certificate Storage
+## Running the Desktop Application
 
-Certificates are stored encrypted in the database:
-- Uses user's GPG key for encryption (public key) and decryption (private key)
-- Certificate data encrypted before database persistence
-- Decryption occurs transiently during deployment only
-- No plaintext certificate files written to disk during creation
+### Download
+
+Download the latest release from the [GitHub Releases](https://github.com/BitCrafts/certificates/releases) page:
+- **Linux**: `BitCrafts.Certificates.Avalonia-<version>-linux-x64.tar.gz`
+- **Windows**: `BitCrafts.Certificates.Avalonia-<version>-win-x64.zip`
+- **macOS**: `BitCrafts.Certificates.Avalonia-<version>-osx-x64.tar.gz`
+
+### Prerequisites
+
+- .NET 8.0 Runtime (self-contained builds include runtime)
+- OpenSSL for certificate operations
+- For SSH deployment: OpenSSH client configured with key-based authentication
+- For filesystem deployment: Access to mounted network filesystems
+
+### Linux
+
+```bash
+# Extract the archive
+tar -xzf BitCrafts.Certificates.Avalonia-<version>-linux-x64.tar.gz
+cd BitCrafts.Certificates.Avalonia
+
+# Set environment variables (optional)
+export BITCRAFTS_DATA_DIR="/var/lib/bitcrafts/certificates"
+export BITCRAFTS_DB_PATH="/var/lib/bitcrafts/certificates/certificates.db"
+
+# Run the application
+./BitCrafts.Certificates.Avalonia
+```
+
+### Windows
+
+```powershell
+# Extract the ZIP archive
+# Navigate to the extracted directory
+
+# Run the application
+.\BitCrafts.Certificates.Avalonia.exe
+```
+
+### macOS
+
+```bash
+# Extract the archive
+tar -xzf BitCrafts.Certificates.Avalonia-<version>-osx-x64.tar.gz
+cd BitCrafts.Certificates.Avalonia
+
+# Run the application
+./BitCrafts.Certificates.Avalonia
+```
+
+### Configuration
+
+On first run, the application will prompt you to configure:
+- Domain name for the Certificate Authority
+- Data directory for certificate storage
+- Database path
+
+These settings are stored in `appsettings.json` in the application directory.
 
 ## Using the Packages
 
@@ -174,139 +234,110 @@ if (result.Success && result.Certificate != null)
 }
 ```
 
-## Running the GUI Application on RHEL
-
-### Prerequisites
-
-- Red Hat Enterprise Linux 8 or later (or compatible: AlmaLinux, Rocky Linux)
-- .NET 8.0 Runtime
-- GnuPG (gpg) installed and configured with user's key
-- OpenSSL for certificate operations
-- OpenSSH client for SSH deployments (optional)
-- Access to mounted network filesystems for filesystem deployments (optional)
-
-### Setup
-
-1. **Install .NET 8.0 Runtime:**
-```bash
-sudo dnf install dotnet-runtime-8.0
-```
-
-2. **Configure GPG Key:**
-```bash
-# Generate a GPG key if you don't have one
-gpg --gen-key
-
-# List your keys to get the key ID
-gpg --list-keys
-```
-
-3. **Configure Database Connection:**
-The application uses SQLite by default. Configure the data directory:
-```bash
-export BITCRAFTS_DATA_DIR="/var/lib/bitcrafts/certificates"
-export BITCRAFTS_DB_PATH="/var/lib/bitcrafts/certificates/certificates.db"
-```
-
-4. **Run the GUI Application:**
-```bash
-dotnet BitCrafts.Certificates.Avalonia.dll
-```
-
-### Configuring Deployment Workflows
-
-See [docs/DEPLOYMENT_WORKFLOWS.md](docs/DEPLOYMENT_WORKFLOWS.md) for detailed instructions on:
-- Setting up SSH key-based authentication
-- Mounting network filesystems (NFS, GlusterFS, CephFS)
-- Configuring deployment targets
-- Security best practices
-
 ## Building and Testing
 
 ```bash
 # Build all projects
-dotnet build
+dotnet build BitCrafts.Certificates.sln
 
 # Run unit tests
-dotnet test
+dotnet test BitCrafts.Certificates.sln
 
-# Build specific package
+# Build specific projects
+dotnet build BitCrafts.Certificates/BitCrafts.Certificates.csproj
 dotnet build BitCrafts.Certificates.Abstractions/BitCrafts.Certificates.Abstractions.csproj
 dotnet build BitCrafts.Certificates.Linux/BitCrafts.Certificates.Linux.csproj
+dotnet build BitCrafts.Certificates.Avalonia/BitCrafts.Certificates.Avalonia.csproj
 ```
+
+## CI/CD
+
+The project includes comprehensive CI/CD workflows:
+- **All branches**: Build and test on push
+- **Main branch**: Build, test, and create development artifacts
+- **Version tags (v*)**: Build, test, publish NuGet packages, create releases with binaries for all platforms
+
+To create a release:
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This will automatically:
+1. Build and test all projects
+2. Publish NuGet packages to GitHub Packages
+3. Create binaries for Linux, Windows, and macOS
+4. Create a GitHub Release with all artifacts
 
 ## Security
 
-- **Encrypted Storage**: Certificates encrypted with GPG before database storage
+- **File Permissions**: Certificate files created with restrictive permissions (0600 for keys, 0644 for certs)
 - **Least Privilege**: File operations use explicit chmod/chown with minimal permissions
 - **Input Validation**: All external command parameters validated and escaped
-- **No Plaintext Files**: Certificate data never written unencrypted to disk during creation
-- **Audit Logging**: All operations logged without exposing sensitive key material
+- **Audit Logging**: All certificate operations logged for accountability
 - **Secure Deployment**: SSH uses key-based authentication; filesystem deployments apply proper permissions
 
 ## Technology Stack
 
 - **.NET 8.0** - Runtime platform
-- **Avalonia 11.x** - Cross-platform UI framework
-- **SQLite** - Default database (replaceable with PostgreSQL, MySQL, etc.)
+- **Avalonia 11.x** - Cross-platform desktop UI framework with MVVM
+- **SQLite** - Lightweight certificate metadata database
 - **OpenSSL** - Certificate generation (via process wrapper)
-- **GnuPG** - Certificate encryption/decryption
-- **OpenSSH** - Remote deployment
+- **OpenSSH** - Remote deployment (optional)
 - **xUnit + FluentAssertions** - Testing
 
 ## Project Structure
 
 ```
 BitCrafts.Certificates/
-├── BitCrafts.Certificates.Abstractions/     # Platform-agnostic interfaces and models
-├── BitCrafts.Certificates.Linux/            # Linux-specific implementations
-├── BitCrafts.Certificates.Avalonia/         # GUI application
-├── BitCrafts.Certificates.Abstractions.Tests/  # Abstractions unit tests
-├── BitCrafts.Certificates.Linux.Tests/      # Linux implementation tests
-├── docs/                                     # Documentation
-│   └── DEPLOYMENT_WORKFLOWS.md              # Deployment workflow guide
-├── .github/workflows/                        # CI/CD workflows
-│   ├── publish-abstractions.yml
-│   └── publish-linux.yml
-└── nuget.config                             # NuGet package sources
+├── BitCrafts.Certificates/                    # Business logic library (formerly MVC)
+│   ├── Application/                           # Application services and DTOs
+│   ├── Domain/                                # Domain entities and interfaces
+│   ├── Infrastructure/                        # Infrastructure implementations
+│   │   ├── Database/                          # Database adapters
+│   │   ├── Storage/                           # File system storage
+│   │   ├── Pki/                               # PKI service adapters
+│   │   └── Deployment/                        # Deployment services (SSH, NFS)
+│   ├── Data/                                  # Data repositories
+│   ├── Services/                              # Core services (audit, revocation)
+│   └── Pki/                                   # Certificate authority services
+├── BitCrafts.Certificates.Avalonia/           # Desktop GUI application
+│   ├── ViewModels/                            # MVVM ViewModels
+│   ├── Views/                                 # Avalonia views (AXAML)
+│   └── Assets/                                # Application resources
+├── BitCrafts.Certificates.Abstractions/       # Platform-agnostic abstractions
+├── BitCrafts.Certificates.Linux/              # Linux-specific implementations
+├── BitCrafts.Certificates.Abstractions.Tests/ # Abstractions unit tests
+├── BitCrafts.Certificates.Linux.Tests/        # Linux implementation tests
+├── docs/                                      # Documentation
+│   └── DEPLOYMENT_WORKFLOWS.md                # Deployment guide
+└── .github/workflows/                         # CI/CD workflows
+    ├── ci-cd.yml                              # Main build/test/publish pipeline
+    ├── publish-abstractions.yml               # Abstractions package publishing
+    └── publish-linux.yml                      # Linux package publishing
 ```
-
-## Publishing Packages
-
-Packages are automatically published to GitHub Packages when tags are pushed:
-
-```bash
-# Publish Abstractions package
-git tag abstractions-v1.0.0
-git push origin abstractions-v1.0.0
-
-# Publish Linux package
-git tag linux-v1.0.0
-git push origin linux-v1.0.0
-```
-
-Or manually trigger via GitHub Actions workflow dispatch.
 
 ## Contributing
 
 This project is designed for intranet/home lab use. Contributions welcome for:
+- UI/UX improvements in the Avalonia application
 - Additional deployment methods
-- Platform-specific implementations (Windows, macOS)
-- Database provider implementations
+- Platform-specific implementations
 - Enhanced security features
 - Bug fixes and documentation improvements
+- Performance optimizations
 
 ## Future Enhancements
 
-- Windows and macOS implementations
-- Additional database providers (PostgreSQL, MySQL, SQL Server)
+- Certificate renewal/rotation automation
+- Additional database providers (PostgreSQL, MySQL)
 - Kubernetes Secret deployment support
-- Automated certificate rotation
-- Web-based management interface (optional)
+- Certificate revocation list (CRL) generation and publishing
+- OCSP responder support
 - Integration with external CAs (Let's Encrypt, etc.)
+- Import/export of CA configuration
 
 ## License
 
 This project is licensed under AGPLv3 (Affero GPL v3). See `LICENSE` for the full text.
-
 
